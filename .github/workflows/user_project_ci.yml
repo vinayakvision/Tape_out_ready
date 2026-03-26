@@ -57,13 +57,16 @@ jobs:
         run: |
           cf setup --pdk ${{ matrix.pdk }} --only-openlane --only-pdk
 
-      - name: Harden Designs
-        run: |
-          set -e
-          python3 .github/scripts/get_designs.py --design ${{ github.workspace }}
-          for design in $(cat harden_sequence.txt); do
-            cf harden $design || exit 1
-          done
+     - name: Harden Designs
+  env:
+    CI: true
+  run: |
+    set -e
+    python3 .github/scripts/get_designs.py --design ${{ github.workspace }}
+    for design in $(cat harden_sequence.txt); do
+      echo "Hardening $design..."
+      cf harden $design || exit 1
+    done
 
       - name: Upload Hardened Design
         uses: actions/upload-artifact@v4
