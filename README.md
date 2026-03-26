@@ -17,6 +17,7 @@
 - [GPIO Configuration](#gpio-configuration)
 - [Local Precheck](#local-precheck)
 - [Checklist for Shuttle Submission](#checklist-for-shuttle-submission)
+- [Real world applications](#Real-world-applications) 
 
 ---
 
@@ -325,3 +326,14 @@ All checks must pass (zero errors) before shuttle submission.
 - [ ] AI / LLM session logs committed to `ai_logs/` directory (contest requirement)
 - [ ] 3-minute demo video link added to this README
 - [ ] Documentation (this README) updated with all project-specific details
+
+
+## Healthcare & Wearables
+
+| Application | How Your Chip Fits |
+|---|---|
+| **ECG arrhythmia detection** | 1D CNN on heart signal → beat classification |
+| **SpO2 / PPG analysis** | Lightweight MobileNet on waveform features |
+| **Fall detection** | Accelerometer + gyro → gesture classification |
+| **Hearing aids** | Real-time audio noise suppression at <5mW |
+| **Smart patch monitoring** | Continuous vitals inference on coin cell battery |
