@@ -1,15 +1,13 @@
-<div align="center">
+# Energy-Efficient Near-Memory Systolic Accelerator with On-Chip Weight Compression for Edge AI
 
-<img src="https://umsousercontent.com/lib_lnlnuhLgkYnZdkSC/hj0vk05j0kemus1i.png" alt="ChipFoundry Logo" height="140" />
+> **ChipFoundry "Next Great Smart Application" Contest — Track: Edge IoT**
+> Vinayak Venkappa Pujeri & Santosh Mokashi — VVCE, Mysuru (VTU Karnataka)
+> License: Apache 2.0
 
-[![Typing SVG](https://readme-typing-svg.demolab.com?font=Inter&size=44&duration=3000&pause=600&color=4C6EF5&center=true&vCenter=true&width=1100&lines=Caravel+User+Project+Template;OpenLane+%2B+ChipFoundry+Flow;Verification+and+Shuttle-Ready)](https://git.io/typing-svg)
-
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![ChipFoundry Marketplace](https://img.shields.io/badge/ChipFoundry-Marketplace-6E40C9.svg)](https://platform.chipfoundry.io/marketplace)
-
-</div>
+---
 
 ## Table of Contents
+
 - [Overview](#overview)
 - [Documentation & Resources](#documentation--resources)
 - [Prerequisites](#prerequisites)
@@ -20,51 +18,204 @@
 - [Local Precheck](#local-precheck)
 - [Checklist for Shuttle Submission](#checklist-for-shuttle-submission)
 
-## Overview
-This repository contains a user project designed for integration into the **Caravel chip user space**. Use it as a template for integrating custom RTL with Caravel's system-on-chip (SoC) utilities, including:
+---
 
-* **IO Pads:** Configurable general-purpose input/output.
-* **Logic Analyzer Probes:** 128 signals for non-intrusive hardware debugging.
-* **Wishbone Port:** A 32-bit standard bus interface for communication between the RISC-V management core and your custom hardware.
+## Overview
+
+This project implements an **Energy-Efficient Near-Memory Systolic Accelerator with On-Chip Weight Compression** — a digital hardware IP integrated into the Caravel SoC user project area, targeting ultra-low-power TinyML inference for battery-operated **industrial anomaly detection sensor nodes (Edge IoT)**.
+**# Energy-Efficient Near-Memory Systolic Accelerator with On-Chip Weight Compression for Edge AI
+
+> **ChipFoundry "Next Great Smart Application" Contest — Track: Edge IoT**
+> Vinayak Venkappa Pujeri & Santosh Mokashi — VVCE, Mysuru (VTU Karnataka)
+> License: Apache 2.0
+
+---
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Documentation & Resources](#documentation--resources)
+- [Prerequisites](#prerequisites)
+- [Project Structure](#project-structure)
+- [Starting Your Project](#starting-your-project)
+- [Development Flow](#development-flow)
+- [GPIO Configuration](#gpio-configuration)
+- [Local Precheck](#local-precheck)
+- [Checklist for Shuttle Submission](#checklist-for-shuttle-submission)
+
+---
+
+## Overview
+
+This project implements an **Energy-Efficient Near-Memory Systolic Accelerator with On-Chip Weight Compression** — a digital hardware IP integrated into the Caravel SoC user project area, targeting ultra-low-power TinyML inference for battery-operated **industrial anomaly detection sensor nodes (Edge IoT)**.
+### Energy-Efficient Near-Memory Systolic Accelerator with On-Chip Weight Compression for Edge AI
+
+> **ChipFoundry "Next Great Smart Application" Contest — Track: Edge IoT**
+> Vinayak Venkappa Pujeri & Santosh Mokashi — VVCE, Mysuru (VTU Karnataka)
+> License: Apache 2.0
+
+---
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Documentation & Resources](#documentation--resources)
+- [Prerequisites](#prerequisites)
+- [Project Structure](#project-structure)
+- [Starting Your Project](#starting-your-project)
+- [Development Flow](#development-flow)
+- [GPIO Configuration](#gpio-configuration)
+- [Local Precheck](#local-precheck)
+- [Checklist for Shuttle Submission](#checklist-for-shuttle-submission)
+
+---
+
+## Overview
+
+This project implements an **Energy-Efficient Near-Memory Systolic Accelerator with On-Chip Weight Compression** — a digital hardware IP integrated into the Caravel SoC user project area, targeting ultra-low-power TinyML inference for battery-operated **industrial anomaly detection sensor nodes (Edge IoT)**.
+
+**The core problem:** Edge AI inference devices spend 60–70% of their energy moving data, not computing. This accelerator attacks the memory bottleneck directly through three co-designed innovations:
+
+1. **Near-Memory Compute** — Local OpenRAM SRAM banks placed adjacent to the systolic Processing Elements (PEs), reducing data movement energy and interconnect switching activity.
+2. **Weight-Stationary Dataflow** — Weights remain stationary inside PE registers; INT8 activations flow left→right; partial sums accumulate top→bottom. Maximises PE utilisation for GEMM/Conv layers (MobileNet, TinyML).
+3. **On-Chip INT4 Weight Compression** — Two 4-bit weights packed into one byte (~2× SRAM footprint reduction). A pipelined decompressor streams weights into PEs with zero throughput penalty.
+
+**Caravel integration:** The accelerator wraps inside `user_project_wrapper.v` as a wishbone slave. Caravel's PicoRV32 RISC-V management core runs a C firmware driver that loads activation tiles, triggers computation, and reads back output partial sums via the wishbone bus.
+
+**Key specifications:**
+
+| Parameter | Value |
+|-----------|-------|
+| Array size | 4×4 weight-stationary systolic array |
+| Activation precision | INT8 |
+| Weight precision | INT4 (compressed) → INT8 (decompressed into PEs) |
+| Weight SRAM reduction | ~2× vs uncompressed baseline |
+| Target workloads | GEMM / Conv layers — MobileNet, TinyML |
+| Process node | SKY130B |
+| User area fit | Well within 10 mm² Caravel user project area |
+| Top-level | `user_project_wrapper` (Caravel standard) |
+
+**Architecture:**
+
+```
+┌──────────────────────────────────────────────────────┐
+│               Top-Level FSM Controller                │
+│         (Load → Decompress → Compute → Writeback)     │
+│               Wishbone Slave Interface                 │
+└─────────────────────┬────────────────────────────────┘
+                      │
+         ┌────────────┴────────────┐
+         │                         │
+┌────────▼─────┐         ┌─────────▼──────────┐
+│  Activation  │         │  Weight Compression  │
+│  Buffer      │         │  Engine (INT4)        │
+│  (OpenRAM)   │         │  (OpenRAM)            │
+└────────┬─────┘         └─────────┬────────────┘
+         │                         │
+┌────────▼─────┐         ┌─────────▼──────────┐
+│  Activation  │         │  Weight Decompressor │
+│  Router      │         │  (INT4 → INT8)       │
+└────────┬─────┘         └─────────┬────────────┘
+         │                         │
+         └───────────┬─────────────┘
+                     │
+         ┌───────────▼─────────────┐
+         │   4×4 Systolic PE Array  │
+         │   (Weight-Stationary)    │
+         │   PE → PE → PE → PE      │
+         │   ↓    ↓    ↓    ↓       │
+         │   PE → PE → PE → PE      │
+         │   ↓    ↓    ↓    ↓       │
+         │   PE → PE → PE → PE      │
+         │   ↓    ↓    ↓    ↓       │
+         │   PE → PE → PE → PE      │
+         └───────────┬─────────────┘
+                     │
+         ┌───────────▼─────────────┐
+         │       Output SRAM        │
+         │  (Partial Sums → Host)   │
+         └──────────────────────────┘
+```
+
+**Dataflow:** INT8 activations × INT4 weights (decompressed) → INT16/INT32 partial sums → Output SRAM → PicoRV32 readback via wishbone
+
+**Team:**
+
+| Name | Role | Contact |
+|------|------|---------|
+| Vinayak Venkappa Pujeri | RTL design, FSM, Caravel integration, OpenLane physical implementation, firmware, PCBA | vinayakpujeri2047@gmail.com |
+| Santosh Mokashi | Verification (RTL + GLS), testbenches, Python golden reference, STA review, documentation | *(add email)* |
+
+Both members: Final Year B.E. (ECE), Vidyavardhaka College of Engineering, Mysuru — VTU
+
+> **Note on team size:** This is a 2-person team. The PCBA and mechanicals deliverables are scoped to a minimal carrier board schematic and simple enclosure. The silicon design, verification, and tapeout flow are fully prioritised.
 
 ---
 
 ## Documentation & Resources
-For detailed hardware specifications and register maps, refer to the following official documents:
 
-* **[Caravel Datasheet](https://github.com/chipfoundry/caravel/blob/main/docs/caravel_datasheet_2.pdf)**: Detailed electrical and physical specifications of the Caravel harness.
-* **[Caravel Technical Reference Manual (TRM)](https://github.com/chipfoundry/caravel/blob/main/docs/caravel_datasheet_2_register_TRM_r2.pdf)**: Complete register maps and programming guides for the management SoC.
-* **[ChipFoundry Marketplace](https://platform.chipfoundry.io/marketplace)**: Access additional IP blocks, EDA tools, and shuttle services.
+| Resource | Link |
+|----------|------|
+| Caravel Datasheet | [caravel_datasheet.pdf](https://github.com/efabless/caravel/blob/master/doc/caravel_datasheet.pdf) |
+| Caravel TRM (Register Maps) | [Caravel TRM](https://caravel-harness.readthedocs.io) |
+| ChipFoundry Marketplace | [platform.chipfoundry.io](https://platform.chipfoundry.io) |
+| OpenLane RTL-to-GDS | [github.com/The-OpenROAD-Project/OpenLane](https://github.com/The-OpenROAD-Project/OpenLane) |
+| OpenRAM SKY130 SRAM macros | [openram.org](https://openram.org) |
+| chipIgnite FAQs | [chipfoundry.io/faqs](https://chipfoundry.io/faqs) |
+| ChipFoundry Discord | [Community Support](https://discord.gg/chipfoundry) |
 
 ---
 
 ## Prerequisites
+
 Ensure your environment meets the following requirements:
 
-1. **Docker** [Linux](https://docs.docker.com/desktop/setup/install/linux/ubuntu/) | [Windows](https://docs.docker.com/desktop/setup/install/windows-install/) | [Mac](https://docs.docker.com/desktop/setup/install/mac-install/)
-2. **Python 3.8+** with `pip`.
-3. **Git**: For repository management.
+- **Docker** — Linux / Windows / Mac (required for OpenLane and Caravel simulation)
+- **Python 3.8+** with `pip`
+- **Git** for repository management
+- **ChipFoundry CLI** — installed via `pip install chipfoundry-cli`
 
 ---
 
 ## Project Structure
-A successful Caravel project requires a specific directory layout for the automated tools to function:
 
-| Directory | Description |
-| :--- | :--- |
-| `openlane/` | Configuration files for hardening macros and the wrapper. |
-| `verilog/rtl/` | Source Verilog code for the project. |
-| `verilog/gl/` | Gate-level netlists (generated after hardening). |
-| `verilog/dv/` | Design Verification (cocotb and Verilog testbenches). |
-| `gds/` | Final GDSII binary files for fabrication. |
-| `lef/` | Library Exchange Format files for the macros. |
+```
+Directory                   Description
+──────────────────────────────────────────────────────────────
+openlane/                   OpenLane config for each macro and the wrapper
+  ├── pe_array/             Hardening config for 4×4 systolic PE macro
+  ├── compression_engine/   Hardening config for INT4 compression + decompressor
+  └── user_project_wrapper/ Top-level wrapper hardening config
+verilog/rtl/                RTL source (SystemVerilog / Verilog)
+  ├── pe_cell.sv            Single Processing Element (MAC unit)
+  ├── pe_array.sv           4×4 systolic array
+  ├── compressor.sv         INT4 bit-packing engine
+  ├── decompressor.sv       INT4 → INT8 pipelined decompressor
+  ├── act_router.sv         Activation router (left→right feed)
+  ├── top_fsm.sv            Top-level FSM (load/decompress/compute/writeback)
+  ├── wb_slave.sv           Wishbone slave interface
+  └── user_project_wrapper.v   Caravel top-level wrapper
+verilog/gl/                 Gate-level netlists (generated after hardening)
+verilog/dv/                 Verification testbenches (cocotb + Verilog)
+  ├── pe_unit_tb/           PE cell unit testbench
+  ├── system_tb/            Full 4×4 GEMM system testbench
+  └── gls_tb/               Gate-level simulation testbench
+gds/                        Final GDSII files (generated after hardening)
+lef/                        LEF files for each hardened macro
+firmware/                   C firmware for Caravel PicoRV32
+  └── tile_loader.c         Wishbone tile-load and readback driver
+pcba/                       KiCad carrier board schematic and layout
+mechanicals/                FreeCAD sensor node enclosure (STEP file)
+ai_logs/                    LLM prompt session logs (contest requirement)
+scripts/                    Python utilities
+  └── golden_ref.py         4×4 GEMM golden reference (INT8 × INT4 weights)
+```
 
 ---
 
 ## Starting Your Project
 
 ### 1. Repository Setup
-Create a new repository based on the `caravel_user_project` template and clone it to your local machine:
 
 ```bash
 git clone <your-github-repo-URL>
@@ -74,52 +225,49 @@ cd <project_name>
 
 ### 2. Project Initialization
 
-> [!IMPORTANT]
-> Run this first! Initialize your project configuration:
+> **Important:** Run this first before any other `cf` commands.
 
 ```bash
 cf init
 ```
 
-This creates `.cf/project.json` with project metadata. **This must be run before any other commands** (`cf setup`, `cf gpio-config`, `cf harden`, `cf precheck`, `cf verify`).
+Creates `.cf/project.json` with project metadata. Required before `cf setup`, `cf gpio-config`, `cf harden`, `cf precheck`, and `cf verify`.
 
 ### 3. Environment Setup
-Install the ChipFoundry CLI tool and set up the local environment (PDKs, OpenLane, and Caravel lite):
 
 ```bash
 cf setup
 ```
 
-The `cf setup` command installs:
-
-- Caravel Lite: The Caravel SoC template.
-- Management Core: RISC-V management area required for simulation.
-- OpenLane: The RTL-to-GDS hardening flow.
-- PDK: Skywater 130nm process design kit.
-- Timing Scripts: For Static Timing Analysis (STA).
+Installs: Caravel Lite, Management Core (PicoRV32), OpenLane, SKY130 PDK, and Timing Scripts.
 
 ---
 
 ## Development Flow
 
 ### Hardening the Design
-Hardening is the process of synthesizing your RTL and performing Place & Route (P&R) to create a GDSII layout.
 
 #### Macro Hardening
-Create a subdirectory for each custom macro under `openlane/` containing your `config.tcl`.
+
+Each sub-module is hardened individually before wrapper integration:
 
 ```bash
-cf harden --list         # List detected configurations
-cf harden <macro_name>   # Harden a specific macro
+cf harden --list                   # List detected macro configurations
+cf harden pe_array                 # Harden the 4×4 systolic PE macro
+cf harden compression_engine       # Harden the INT4 compression + decompressor
 ```
 
 #### Integration
-Instantiate your module(s) in `verilog/rtl/user_project_wrapper.v`.
 
-Update `openlane/user_project_wrapper/config.json` environment variables (`VERILOG_FILES_BLACKBOX`, `EXTRA_LEFS`, `EXTRA_GDS_FILES`) to point to your new macros.
+Instantiate hardened macros in `verilog/rtl/user_project_wrapper.v`. Update `openlane/user_project_wrapper/config.json`:
+
+```json
+"VERILOG_FILES_BLACKBOX": "verilog/gl/pe_array.v verilog/gl/compression_engine.v",
+"EXTRA_LEFS": "lef/pe_array.lef lef/compression_engine.lef",
+"EXTRA_GDS_FILES": "gds/pe_array.gds gds/compression_engine.gds"
+```
 
 #### Wrapper Hardening
-Finalize the top-level user project:
 
 ```bash
 cf harden user_project_wrapper
@@ -127,42 +275,27 @@ cf harden user_project_wrapper
 
 ### Verification
 
-#### 1. Simulation
-We use cocotb for functional verification. Ensure your file lists are updated in `verilog/includes/`.
-
-**Configure GPIO settings first (required before verification):**
+#### Step 1 — Configure GPIO (required before any verification)
 
 ```bash
 cf gpio-config
 ```
 
-This interactive command will:
-- Configure all GPIO pins interactively
-- Automatically update `verilog/rtl/user_defines.v`
-- Automatically run `gen_gpio_defaults.py` to generate GPIO defaults for simulation
-
-GPIO configuration is required before running any verification tests.
-
-Run RTL Simulation:
+#### Step 2 — RTL Simulation
 
 ```bash
-cf verify <test_name>
+cf verify pe_unit_test             # PE cell unit test (16 random vectors)
+cf verify system_gemm_test         # Full 4×4 GEMM test vs Python golden reference
+cf verify --all                    # Run all testbenches
 ```
 
-Run Gate-Level (GL) Simulation:
+#### Step 3 — Gate-Level Simulation
 
 ```bash
-cf verify <test_name> --sim gl
+cf verify system_gemm_test --sim gl
 ```
 
-Run all tests:
-
-```bash
-cf verify --all
-```
-
-#### 2. Static Timing Analysis (STA)
-Verify that your design meets timing constraints using OpenSTA:
+#### Step 4 — Static Timing Analysis
 
 ```bash
 make extract-parasitics
@@ -170,62 +303,667 @@ make create-spef-mapping
 make caravel-sta
 ```
 
-> [!NOTE]
-> Run `make setup-timing-scripts` if you need to update the STA environment.
+### Implementation Plan — Contest Timeline
+
+**Final submission: April 30, 2025 | Shuttle tapeout: May 13, 2025**
+
+| Week | Dates | Vinayak | Santosh |
+|------|-------|---------|---------|
+| **1** | Mar 26 – Apr 1 | Caravel repo + OpenLane setup, PE MAC RTL, INT4 compressor + decompressor RTL, OpenRAM macro selection | PE + compressor unit testbenches, Python golden reference (golden_ref.py) |
+| **2** | Apr 2 – Apr 9 | 4×4 PE grid + activation router, top-level FSM, wishbone slave interface, OpenRAM macro integration | Full system testbench (10 GEMM test cases), STA `.sdc` first draft |
+| **3** | Apr 10 – Apr 18 | OpenLane hardening (PE macro + wrapper), DRC/LVS fix iterations, clock-gating, ChipFoundry Precheck | GLS with back-annotated netlist, timing report review, Precheck error triage |
+| **4** | Apr 19 – Apr 25 | C firmware (wishbone tile loader), KiCad carrier board schematic, FreeCAD enclosure | Firmware sim test, PPA benchmarking (compressed vs baseline), module documentation, demo video |
+| **5** | Apr 26 – Apr 30 | Final GDS merge, Tapeout check, submission form | README finalisation, AI session logs committed to `ai_logs/` |
+
+> **Critical path:** OpenLane hardening (Week 3) → Tapeout check (Week 5). DRC fix iterations must begin no later than April 10.
 
 ---
 
 ## GPIO Configuration
-Configure the power-on default configuration for each GPIO using the interactive CLI tool.
 
-**Use the GPIO configuration command:**
+Configure GPIO power-on defaults before running verification or precheck:
+
 ```bash
 cf gpio-config
 ```
 
-This command will:
-- Present an interactive form for configuring GPIO pins 5-37 (GPIO 0-4 are fixed system pins)
-- Show available GPIO modes with descriptions
-- Allow selection by number, partial key, or full mode name
-- Save configuration to `.cf/project.json` (as hex values)
-- Automatically update `verilog/rtl/user_defines.v` with the new configuration
-- Automatically run `gen_gpio_defaults.py` to generate GPIO defaults for simulation (if Caravel is installed)
+Configures GPIO pins 5–37 interactively and auto-updates `verilog/rtl/user_defines.v`.
 
-**GPIO Pin Information:**
-- GPIO[0] to GPIO[4]: Preset system pins (do not change).
-- GPIO[5] to GPIO[37]: User-configurable pins.
+**Planned GPIO assignment for this project:**
 
-**Available GPIO Modes:**
-- Management modes: `mgmt_input_nopull`, `mgmt_input_pulldown`, `mgmt_input_pullup`, `mgmt_output`, `mgmt_bidirectional`, `mgmt_analog`
-- User modes: `user_input_nopull`, `user_input_pulldown`, `user_input_pullup`, `user_output`, `user_bidirectional`, `user_output_monitored`, `user_analog`
+| GPIO | Direction | Function |
+|------|-----------|----------|
+| GPIO[5:12] | Input | Activation data bus (8-bit) |
+| GPIO[13:20] | Input | Compressed weight data bus (8-bit) |
+| GPIO[21:28] | Output | Output partial sum bus (8-bit) |
+| GPIO[29] | Input | Start signal |
+| GPIO[30] | Output | Done signal |
+| GPIO[31:37] | — | Reserved / unused |
 
-> [!NOTE]
-> GPIO configuration is required before running `cf precheck` or `cf verify`. Invalid modes cannot be saved - all GPIOs must have valid configurations.
+> GPIO[0]–GPIO[4] are fixed system pins — do not modify.
 
 ---
 
 ## Local Precheck
-Before submitting your design for fabrication, run the local precheck to ensure it complies with all shuttle requirements:
 
-> [!IMPORTANT]
-> GPIO configuration is required before running precheck. Make sure you've run `cf gpio-config` first.
+> **GPIO configuration must be completed before running precheck.**
 
 ```bash
-cf precheck
+cf precheck                                          # Full precheck
+cf precheck --disable-lvs                            # Skip LVS during early iterations
+cf precheck --checks license --checks makefile       # Run specific checks only
 ```
 
-You can also run specific checks or disable LVS:
+All checks must pass (zero errors) before shuttle submission.
 
-```bash
-cf precheck --disable-lvs                    # Skip LVS check
-cf precheck --checks license --checks makefile  # Run specific checks only
-```
 ---
 
 ## Checklist for Shuttle Submission
-- [ ] Top-level macro is named user_project_wrapper.
-- [ ] Full Chip Simulation passes for both RTL and GL.
-- [ ] Hardened Macros are LVS and DRC clean.
-- [ ] user_project_wrapper matches the required pin order/template.
-- [ ] Design passes the local cf precheck.
-- [ ] Documentation (this README) is updated with project-specific details.
+
+- [ ] Top-level macro is named `user_project_wrapper`
+- [ ] Full chip simulation passes for both RTL and GL
+- [ ] Hardened macros are LVS and DRC clean
+- [ ] `user_project_wrapper` matches the required pin order / template
+- [ ] Design passes the local `cf precheck`
+- [ ] C firmware committed to `firmware/` directory
+- [ ] KiCad PCBA schematic committed to `pcba/` directory
+- [ ] FreeCAD enclosure STEP file committed to `mechanicals/` directory
+- [ ] AI / LLM session logs committed to `ai_logs/` directory (contest requirement)
+- [ ] 3-minute demo video link added to this README
+- [ ] Documentation (this README) updated with all project-specific details
+
+**The core problem:** Edge AI inference devices spend 60–70% of their energy moving data, not computing. This accelerator attacks the memory bottleneck directly through three co-designed innovations:
+
+1. **Near-Memory Compute** — Local OpenRAM SRAM banks placed adjacent to the systolic Processing Elements (PEs), reducing data movement energy and interconnect switching activity.
+2. **Weight-Stationary Dataflow** — Weights remain stationary inside PE registers; INT8 activations flow left→right; partial sums accumulate top→bottom. Maximises PE utilisation for GEMM/Conv layers (MobileNet, TinyML).
+3. **On-Chip INT4 Weight Compression** — Two 4-bit weights packed into one byte (~2× SRAM footprint reduction). A pipelined decompressor streams weights into PEs with zero throughput penalty.
+
+**Caravel integration:** The accelerator wraps inside `user_project_wrapper.v` as a wishbone slave. Caravel's PicoRV32 RISC-V management core runs a C firmware driver that loads activation tiles, triggers computation, and reads back output partial sums via the wishbone bus.
+
+**Key specifications:**
+
+| Parameter | Value |
+|-----------|-------|
+| Array size | 4×4 weight-stationary systolic array |
+| Activation precision | INT8 |
+| Weight precision | INT4 (compressed) → INT8 (decompressed into PEs) |
+| Weight SRAM reduction | ~2× vs uncompressed baseline |
+| Target workloads | GEMM / Conv layers — MobileNet, TinyML |
+| Process node | SKY130B |
+| User area fit | Well within 10 mm² Caravel user project area |
+| Top-level | `user_project_wrapper` (Caravel standard) |
+
+**Architecture:**
+
+```
+┌──────────────────────────────────────────────────────┐
+│               Top-Level FSM Controller                │
+│         (Load → Decompress → Compute → Writeback)     │
+│               Wishbone Slave Interface                 │
+└─────────────────────┬────────────────────────────────┘
+                      │
+         ┌────────────┴────────────┐
+         │                         │
+┌────────▼─────┐         ┌─────────▼──────────┐
+│  Activation  │         │  Weight Compression  │
+│  Buffer      │         │  Engine (INT4)        │
+│  (OpenRAM)   │         │  (OpenRAM)            │
+└────────┬─────┘         └─────────┬────────────┘
+         │                         │
+┌────────▼─────┐         ┌─────────▼──────────┐
+│  Activation  │         │  Weight Decompressor │
+│  Router      │         │  (INT4 → INT8)       │
+└────────┬─────┘         └─────────┬────────────┘
+         │                         │
+         └───────────┬─────────────┘
+                     │
+         ┌───────────▼─────────────┐
+         │   4×4 Systolic PE Array  │
+         │   (Weight-Stationary)    │
+         │   PE → PE → PE → PE      │
+         │   ↓    ↓    ↓    ↓       │
+         │   PE → PE → PE → PE      │
+         │   ↓    ↓    ↓    ↓       │
+         │   PE → PE → PE → PE      │
+         │   ↓    ↓    ↓    ↓       │
+         │   PE → PE → PE → PE      │
+         └───────────┬─────────────┘
+                     │
+         ┌───────────▼─────────────┐
+         │       Output SRAM        │
+         │  (Partial Sums → Host)   │
+         └──────────────────────────┘
+```
+
+**Dataflow:** INT8 activations × INT4 weights (decompressed) → INT16/INT32 partial sums → Output SRAM → PicoRV32 readback via wishbone
+
+**Team:**
+
+| Name | Role | Contact |
+|------|------|---------|
+| Vinayak Venkappa Pujeri | RTL design, FSM, Caravel integration, OpenLane physical implementation, firmware, PCBA | vinayakpujeri2047@gmail.com |
+| Santosh Mokashi | Verification (RTL + GLS), testbenches, Python golden reference, STA review, documentation | *(add email)* |
+
+Both members: Final Year B.E. (ECE), Vidyavardhaka College of Engineering, Mysuru — VTU
+
+> **Note on team size:** This is a 2-person team. The PCBA and mechanicals deliverables are scoped to a minimal carrier board schematic and simple enclosure. The silicon design, verification, and tapeout flow are fully prioritised.
+
+---
+
+## Documentation & Resources
+
+| Resource | Link |
+|----------|------|
+| Caravel Datasheet | [caravel_datasheet.pdf](https://github.com/efabless/caravel/blob/master/doc/caravel_datasheet.pdf) |
+| Caravel TRM (Register Maps) | [Caravel TRM](https://caravel-harness.readthedocs.io) |
+| ChipFoundry Marketplace | [platform.chipfoundry.io](https://platform.chipfoundry.io) |
+| OpenLane RTL-to-GDS | [github.com/The-OpenROAD-Project/OpenLane](https://github.com/The-OpenROAD-Project/OpenLane) |
+| OpenRAM SKY130 SRAM macros | [openram.org](https://openram.org) |
+| chipIgnite FAQs | [chipfoundry.io/faqs](https://chipfoundry.io/faqs) |
+| ChipFoundry Discord | [Community Support](https://discord.gg/chipfoundry) |
+
+---
+
+## Prerequisites
+
+Ensure your environment meets the following requirements:
+
+- **Docker** — Linux / Windows / Mac (required for OpenLane and Caravel simulation)
+- **Python 3.8+** with `pip`
+- **Git** for repository management
+- **ChipFoundry CLI** — installed via `pip install chipfoundry-cli`
+
+---
+
+## Project Structure
+
+```
+Directory                   Description
+──────────────────────────────────────────────────────────────
+openlane/                   OpenLane config for each macro and the wrapper
+  ├── pe_array/             Hardening config for 4×4 systolic PE macro
+  ├── compression_engine/   Hardening config for INT4 compression + decompressor
+  └── user_project_wrapper/ Top-level wrapper hardening config
+verilog/rtl/                RTL source (SystemVerilog / Verilog)
+  ├── pe_cell.sv            Single Processing Element (MAC unit)
+  ├── pe_array.sv           4×4 systolic array
+  ├── compressor.sv         INT4 bit-packing engine
+  ├── decompressor.sv       INT4 → INT8 pipelined decompressor
+  ├── act_router.sv         Activation router (left→right feed)
+  ├── top_fsm.sv            Top-level FSM (load/decompress/compute/writeback)
+  ├── wb_slave.sv           Wishbone slave interface
+  └── user_project_wrapper.v   Caravel top-level wrapper
+verilog/gl/                 Gate-level netlists (generated after hardening)
+verilog/dv/                 Verification testbenches (cocotb + Verilog)
+  ├── pe_unit_tb/           PE cell unit testbench
+  ├── system_tb/            Full 4×4 GEMM system testbench
+  └── gls_tb/               Gate-level simulation testbench
+gds/                        Final GDSII files (generated after hardening)
+lef/                        LEF files for each hardened macro
+firmware/                   C firmware for Caravel PicoRV32
+  └── tile_loader.c         Wishbone tile-load and readback driver
+pcba/                       KiCad carrier board schematic and layout
+mechanicals/                FreeCAD sensor node enclosure (STEP file)
+ai_logs/                    LLM prompt session logs (contest requirement)
+scripts/                    Python utilities
+  └── golden_ref.py         4×4 GEMM golden reference (INT8 × INT4 weights)
+```
+
+---
+
+## Starting Your Project
+
+### 1. Repository Setup
+
+```bash
+git clone <your-github-repo-URL>
+pip install chipfoundry-cli
+cd <project_name>
+```
+
+### 2. Project Initialization
+
+> **Important:** Run this first before any other `cf` commands.
+
+```bash
+cf init
+```
+
+Creates `.cf/project.json` with project metadata. Required before `cf setup`, `cf gpio-config`, `cf harden`, `cf precheck`, and `cf verify`.
+
+### 3. Environment Setup
+
+```bash
+cf setup
+```
+
+Installs: Caravel Lite, Management Core (PicoRV32), OpenLane, SKY130 PDK, and Timing Scripts.
+
+---
+
+## Development Flow
+
+### Hardening the Design
+
+#### Macro Hardening
+
+Each sub-module is hardened individually before wrapper integration:
+
+```bash
+cf harden --list                   # List detected macro configurations
+cf harden pe_array                 # Harden the 4×4 systolic PE macro
+cf harden compression_engine       # Harden the INT4 compression + decompressor
+```
+
+#### Integration
+
+Instantiate hardened macros in `verilog/rtl/user_project_wrapper.v`. Update `openlane/user_project_wrapper/config.json`:
+
+```json
+"VERILOG_FILES_BLACKBOX": "verilog/gl/pe_array.v verilog/gl/compression_engine.v",
+"EXTRA_LEFS": "lef/pe_array.lef lef/compression_engine.lef",
+"EXTRA_GDS_FILES": "gds/pe_array.gds gds/compression_engine.gds"
+```
+
+#### Wrapper Hardening
+
+```bash
+cf harden user_project_wrapper
+```
+
+### Verification
+
+#### Step 1 — Configure GPIO (required before any verification)
+
+```bash
+cf gpio-config
+```
+
+#### Step 2 — RTL Simulation
+
+```bash
+cf verify pe_unit_test             # PE cell unit test (16 random vectors)
+cf verify system_gemm_test         # Full 4×4 GEMM test vs Python golden reference
+cf verify --all                    # Run all testbenches
+```
+
+#### Step 3 — Gate-Level Simulation
+
+```bash
+cf verify system_gemm_test --sim gl
+```
+
+#### Step 4 — Static Timing Analysis
+
+```bash
+make extract-parasitics
+make create-spef-mapping
+make caravel-sta
+```
+
+### Implementation Plan — Contest Timeline
+
+**Final submission: April 30, 2025 | Shuttle tapeout: May 13, 2025**
+
+| Week | Dates | Vinayak | Santosh |
+|------|-------|---------|---------|
+| **1** | Mar 26 – Apr 1 | Caravel repo + OpenLane setup, PE MAC RTL, INT4 compressor + decompressor RTL, OpenRAM macro selection | PE + compressor unit testbenches, Python golden reference (golden_ref.py) |
+| **2** | Apr 2 – Apr 9 | 4×4 PE grid + activation router, top-level FSM, wishbone slave interface, OpenRAM macro integration | Full system testbench (10 GEMM test cases), STA `.sdc` first draft |
+| **3** | Apr 10 – Apr 18 | OpenLane hardening (PE macro + wrapper), DRC/LVS fix iterations, clock-gating, ChipFoundry Precheck | GLS with back-annotated netlist, timing report review, Precheck error triage |
+| **4** | Apr 19 – Apr 25 | C firmware (wishbone tile loader), KiCad carrier board schematic, FreeCAD enclosure | Firmware sim test, PPA benchmarking (compressed vs baseline), module documentation, demo video |
+| **5** | Apr 26 – Apr 30 | Final GDS merge, Tapeout check, submission form | README finalisation, AI session logs committed to `ai_logs/` |
+
+> **Critical path:** OpenLane hardening (Week 3) → Tapeout check (Week 5). DRC fix iterations must begin no later than April 10.
+
+---
+
+## GPIO Configuration
+
+Configure GPIO power-on defaults before running verification or precheck:
+
+```bash
+cf gpio-config
+```
+
+Configures GPIO pins 5–37 interactively and auto-updates `verilog/rtl/user_defines.v`.
+
+**Planned GPIO assignment for this project:**
+
+| GPIO | Direction | Function |
+|------|-----------|----------|
+| GPIO[5:12] | Input | Activation data bus (8-bit) |
+| GPIO[13:20] | Input | Compressed weight data bus (8-bit) |
+| GPIO[21:28] | Output | Output partial sum bus (8-bit) |
+| GPIO[29] | Input | Start signal |
+| GPIO[30] | Output | Done signal |
+| GPIO[31:37] | — | Reserved / unused |
+
+> GPIO[0]–GPIO[4] are fixed system pins — do not modify.
+
+---
+
+## Local Precheck
+
+> **GPIO configuration must be completed before running precheck.**
+
+```bash
+cf precheck                                          # Full precheck
+cf precheck --disable-lvs                            # Skip LVS during early iterations
+cf precheck --checks license --checks makefile       # Run specific checks only
+```
+
+All checks must pass (zero errors) before shuttle submission.
+
+---
+
+## Checklist for Shuttle Submission
+
+- [ ] Top-level macro is named `user_project_wrapper`
+- [ ] Full chip simulation passes for both RTL and GL
+- [ ] Hardened macros are LVS and DRC clean
+- [ ] `user_project_wrapper` matches the required pin order / template
+- [ ] Design passes the local `cf precheck`
+- [ ] C firmware committed to `firmware/` directory
+- [ ] KiCad PCBA schematic committed to `pcba/` directory
+- [ ] FreeCAD enclosure STEP file committed to `mechanicals/` directory
+- [ ] AI / LLM session logs committed to `ai_logs/` directory (contest requirement)
+- [ ] 3-minute demo video link added to this README
+- [ ] Documentation (this README) updated with all project-specific details
+
+**The core problem:** Edge AI inference devices spend 60–70% of their energy moving data, not computing. This accelerator attacks the memory bottleneck directly through three co-designed innovations:
+
+1. **Near-Memory Compute** — Local OpenRAM SRAM banks placed adjacent to the systolic Processing Elements (PEs), reducing data movement energy and interconnect switching activity.
+2. **Weight-Stationary Dataflow** — Weights remain stationary inside PE registers; INT8 activations flow left→right; partial sums accumulate top→bottom. Maximises PE utilisation for GEMM/Conv layers (MobileNet, TinyML).
+3. **On-Chip INT4 Weight Compression** — Two 4-bit weights packed into one byte (~2× SRAM footprint reduction). A pipelined decompressor streams weights into PEs with zero throughput penalty.
+
+**Caravel integration:** The accelerator wraps inside `user_project_wrapper.v` as a wishbone slave. Caravel's PicoRV32 RISC-V management core runs a C firmware driver that loads activation tiles, triggers computation, and reads back output partial sums via the wishbone bus.
+
+**Key specifications:**
+
+| Parameter | Value |
+|-----------|-------|
+| Array size | 4×4 weight-stationary systolic array |
+| Activation precision | INT8 |
+| Weight precision | INT4 (compressed) → INT8 (decompressed into PEs) |
+| Weight SRAM reduction | ~2× vs uncompressed baseline |
+| Target workloads | GEMM / Conv layers — MobileNet, TinyML |
+| Process node | SKY130B |
+| User area fit | Well within 10 mm² Caravel user project area |
+| Top-level | `user_project_wrapper` (Caravel standard) |
+
+**Architecture:**
+
+```
+┌──────────────────────────────────────────────────────┐
+│               Top-Level FSM Controller                │
+│         (Load → Decompress → Compute → Writeback)     │
+│               Wishbone Slave Interface                 │
+└─────────────────────┬────────────────────────────────┘
+                      │
+         ┌────────────┴────────────┐
+         │                         │
+┌────────▼─────┐         ┌─────────▼──────────┐
+│  Activation  │         │  Weight Compression  │
+│  Buffer      │         │  Engine (INT4)        │
+│  (OpenRAM)   │         │  (OpenRAM)            │
+└────────┬─────┘         └─────────┬────────────┘
+         │                         │
+┌────────▼─────┐         ┌─────────▼──────────┐
+│  Activation  │         │  Weight Decompressor │
+│  Router      │         │  (INT4 → INT8)       │
+└────────┬─────┘         └─────────┬────────────┘
+         │                         │
+         └───────────┬─────────────┘
+                     │
+         ┌───────────▼─────────────┐
+         │   4×4 Systolic PE Array  │
+         │   (Weight-Stationary)    │
+         │   PE → PE → PE → PE      │
+         │   ↓    ↓    ↓    ↓       │
+         │   PE → PE → PE → PE      │
+         │   ↓    ↓    ↓    ↓       │
+         │   PE → PE → PE → PE      │
+         │   ↓    ↓    ↓    ↓       │
+         │   PE → PE → PE → PE      │
+         └───────────┬─────────────┘
+                     │
+         ┌───────────▼─────────────┐
+         │       Output SRAM        │
+         │  (Partial Sums → Host)   │
+         └──────────────────────────┘
+```
+
+**Dataflow:** INT8 activations × INT4 weights (decompressed) → INT16/INT32 partial sums → Output SRAM → PicoRV32 readback via wishbone
+
+**Team:**
+
+| Name | Role | Contact |
+|------|------|---------|
+| Vinayak Venkappa Pujeri | RTL design, FSM, Caravel integration, OpenLane physical implementation, firmware, PCBA | vinayakpujeri2047@gmail.com |
+| Santosh Mokashi | Verification (RTL + GLS), testbenches, Python golden reference, STA review, documentation | *(add email)* |
+
+Both members: Final Year B.E. (ECE), Vidyavardhaka College of Engineering, Mysuru — VTU
+
+> **Note on team size:** This is a 2-person team. The PCBA and mechanicals deliverables are scoped to a minimal carrier board schematic and simple enclosure. The silicon design, verification, and tapeout flow are fully prioritised.
+
+---
+
+## Documentation & Resources
+
+| Resource | Link |
+|----------|------|
+| Caravel Datasheet | [caravel_datasheet.pdf](https://github.com/efabless/caravel/blob/master/doc/caravel_datasheet.pdf) |
+| Caravel TRM (Register Maps) | [Caravel TRM](https://caravel-harness.readthedocs.io) |
+| ChipFoundry Marketplace | [platform.chipfoundry.io](https://platform.chipfoundry.io) |
+| OpenLane RTL-to-GDS | [github.com/The-OpenROAD-Project/OpenLane](https://github.com/The-OpenROAD-Project/OpenLane) |
+| OpenRAM SKY130 SRAM macros | [openram.org](https://openram.org) |
+| chipIgnite FAQs | [chipfoundry.io/faqs](https://chipfoundry.io/faqs) |
+| ChipFoundry Discord | [Community Support](https://discord.gg/chipfoundry) |
+
+---
+
+## Prerequisites
+
+Ensure your environment meets the following requirements:
+
+- **Docker** — Linux / Windows / Mac (required for OpenLane and Caravel simulation)
+- **Python 3.8+** with `pip`
+- **Git** for repository management
+- **ChipFoundry CLI** — installed via `pip install chipfoundry-cli`
+
+---
+
+## Project Structure
+
+```
+Directory                   Description
+──────────────────────────────────────────────────────────────
+openlane/                   OpenLane config for each macro and the wrapper
+  ├── pe_array/             Hardening config for 4×4 systolic PE macro
+  ├── compression_engine/   Hardening config for INT4 compression + decompressor
+  └── user_project_wrapper/ Top-level wrapper hardening config
+verilog/rtl/                RTL source (SystemVerilog / Verilog)
+  ├── pe_cell.sv            Single Processing Element (MAC unit)
+  ├── pe_array.sv           4×4 systolic array
+  ├── compressor.sv         INT4 bit-packing engine
+  ├── decompressor.sv       INT4 → INT8 pipelined decompressor
+  ├── act_router.sv         Activation router (left→right feed)
+  ├── top_fsm.sv            Top-level FSM (load/decompress/compute/writeback)
+  ├── wb_slave.sv           Wishbone slave interface
+  └── user_project_wrapper.v   Caravel top-level wrapper
+verilog/gl/                 Gate-level netlists (generated after hardening)
+verilog/dv/                 Verification testbenches (cocotb + Verilog)
+  ├── pe_unit_tb/           PE cell unit testbench
+  ├── system_tb/            Full 4×4 GEMM system testbench
+  └── gls_tb/               Gate-level simulation testbench
+gds/                        Final GDSII files (generated after hardening)
+lef/                        LEF files for each hardened macro
+firmware/                   C firmware for Caravel PicoRV32
+  └── tile_loader.c         Wishbone tile-load and readback driver
+pcba/                       KiCad carrier board schematic and layout
+mechanicals/                FreeCAD sensor node enclosure (STEP file)
+ai_logs/                    LLM prompt session logs (contest requirement)
+scripts/                    Python utilities
+  └── golden_ref.py         4×4 GEMM golden reference (INT8 × INT4 weights)
+```
+
+---
+
+## Starting Your Project
+
+### 1. Repository Setup
+
+```bash
+git clone <your-github-repo-URL>
+pip install chipfoundry-cli
+cd <project_name>
+```
+
+### 2. Project Initialization
+
+> **Important:** Run this first before any other `cf` commands.
+
+```bash
+cf init
+```
+
+Creates `.cf/project.json` with project metadata. Required before `cf setup`, `cf gpio-config`, `cf harden`, `cf precheck`, and `cf verify`.
+
+### 3. Environment Setup
+
+```bash
+cf setup
+```
+
+Installs: Caravel Lite, Management Core (PicoRV32), OpenLane, SKY130 PDK, and Timing Scripts.
+
+---
+
+## Development Flow
+
+### Hardening the Design
+
+#### Macro Hardening
+
+Each sub-module is hardened individually before wrapper integration:
+
+```bash
+cf harden --list                   # List detected macro configurations
+cf harden pe_array                 # Harden the 4×4 systolic PE macro
+cf harden compression_engine       # Harden the INT4 compression + decompressor
+```
+
+#### Integration
+
+Instantiate hardened macros in `verilog/rtl/user_project_wrapper.v`. Update `openlane/user_project_wrapper/config.json`:
+
+```json
+"VERILOG_FILES_BLACKBOX": "verilog/gl/pe_array.v verilog/gl/compression_engine.v",
+"EXTRA_LEFS": "lef/pe_array.lef lef/compression_engine.lef",
+"EXTRA_GDS_FILES": "gds/pe_array.gds gds/compression_engine.gds"
+```
+
+#### Wrapper Hardening
+
+```bash
+cf harden user_project_wrapper
+```
+
+### Verification
+
+#### Step 1 — Configure GPIO (required before any verification)
+
+```bash
+cf gpio-config
+```
+
+#### Step 2 — RTL Simulation
+
+```bash
+cf verify pe_unit_test             # PE cell unit test (16 random vectors)
+cf verify system_gemm_test         # Full 4×4 GEMM test vs Python golden reference
+cf verify --all                    # Run all testbenches
+```
+
+#### Step 3 — Gate-Level Simulation
+
+```bash
+cf verify system_gemm_test --sim gl
+```
+
+#### Step 4 — Static Timing Analysis
+
+```bash
+make extract-parasitics
+make create-spef-mapping
+make caravel-sta
+```
+
+### Implementation Plan — Contest Timeline
+
+**Final submission: April 30, 2025 | Shuttle tapeout: May 13, 2025**
+
+| Week | Dates | Vinayak | Santosh |
+|------|-------|---------|---------|
+| **1** | Mar 26 – Apr 1 | Caravel repo + OpenLane setup, PE MAC RTL, INT4 compressor + decompressor RTL, OpenRAM macro selection | PE + compressor unit testbenches, Python golden reference (golden_ref.py) |
+| **2** | Apr 2 – Apr 9 | 4×4 PE grid + activation router, top-level FSM, wishbone slave interface, OpenRAM macro integration | Full system testbench (10 GEMM test cases), STA `.sdc` first draft |
+| **3** | Apr 10 – Apr 18 | OpenLane hardening (PE macro + wrapper), DRC/LVS fix iterations, clock-gating, ChipFoundry Precheck | GLS with back-annotated netlist, timing report review, Precheck error triage |
+| **4** | Apr 19 – Apr 25 | C firmware (wishbone tile loader), KiCad carrier board schematic, FreeCAD enclosure | Firmware sim test, PPA benchmarking (compressed vs baseline), module documentation, demo video |
+| **5** | Apr 26 – Apr 30 | Final GDS merge, Tapeout check, submission form | README finalisation, AI session logs committed to `ai_logs/` |
+
+> **Critical path:** OpenLane hardening (Week 3) → Tapeout check (Week 5). DRC fix iterations must begin no later than April 10.
+
+---
+
+## GPIO Configuration
+
+Configure GPIO power-on defaults before running verification or precheck:
+
+```bash
+cf gpio-config
+```
+
+Configures GPIO pins 5–37 interactively and auto-updates `verilog/rtl/user_defines.v`.
+
+**Planned GPIO assignment for this project:**
+
+| GPIO | Direction | Function |
+|------|-----------|----------|
+| GPIO[5:12] | Input | Activation data bus (8-bit) |
+| GPIO[13:20] | Input | Compressed weight data bus (8-bit) |
+| GPIO[21:28] | Output | Output partial sum bus (8-bit) |
+| GPIO[29] | Input | Start signal |
+| GPIO[30] | Output | Done signal |
+| GPIO[31:37] | — | Reserved / unused |
+
+> GPIO[0]–GPIO[4] are fixed system pins — do not modify.
+
+---
+
+## Local Precheck
+
+> **GPIO configuration must be completed before running precheck.**
+
+```bash
+cf precheck                                          # Full precheck
+cf precheck --disable-lvs                            # Skip LVS during early iterations
+cf precheck --checks license --checks makefile       # Run specific checks only
+```
+
+All checks must pass (zero errors) before shuttle submission.
+
+---
+
+## Checklist for Shuttle Submission
+
+- [ ] Top-level macro is named `user_project_wrapper`
+- [ ] Full chip simulation passes for both RTL and GL
+- [ ] Hardened macros are LVS and DRC clean
+- [ ] `user_project_wrapper` matches the required pin order / template
+- [ ] Design passes the local `cf precheck`
+- [ ] C firmware committed to `firmware/` directory
+- [ ] KiCad PCBA schematic committed to `pcba/` directory
+- [ ] FreeCAD enclosure STEP file committed to `mechanicals/` directory
+- [ ] AI / LLM session logs committed to `ai_logs/` directory (contest requirement)
+- [ ] 3-minute demo video link added to this README
+- [ ] Documentation (this README) updated with all project-specific details
