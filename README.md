@@ -52,27 +52,27 @@ This project implements an **Energy-Efficient Near-Memory Systolic Accelerator w
 
 ```
 ┌──────────────────────────────────────────────────────┐
-│               Top-Level FSM Controller                │
-│         (Load → Decompress → Compute → Writeback)     │
-│               Wishbone Slave Interface                 │
+│               Top-Level FSM Controller               │
+│         (Load → Decompress → Compute → Writeback)    │
+│               Wishbone Slave Interface               │
 └─────────────────────┬────────────────────────────────┘
                       │
          ┌────────────┴────────────┐
          │                         │
 ┌────────▼─────┐         ┌─────────▼──────────┐
-│  Activation  │         │  Weight Compression  │
-│  Buffer      │         │  Engine (INT4)        │
-│  (OpenRAM)   │         │  (OpenRAM)            │
-└────────┬─────┘         └─────────┬────────────┘
+│  Activation  │         │  Weight Compression│
+│  Buffer      │         │  Engine (INT4)     │
+│  (OpenRAM)   │         │  (OpenRAM)         │
+└────────┬─────┘         └─────────┬──────────┘
          │                         │
-┌────────▼─────┐         ┌─────────▼──────────┐
+┌────────▼─────┐         ┌─────────▼────────────┐
 │  Activation  │         │  Weight Decompressor │
 │  Router      │         │  (INT4 → INT8)       │
 └────────┬─────┘         └─────────┬────────────┘
          │                         │
          └───────────┬─────────────┘
                      │
-         ┌───────────▼─────────────┐
+         ┌───────────▼──────────────┐
          │   4×4 Systolic PE Array  │
          │   (Weight-Stationary)    │
          │   PE → PE → PE → PE      │
@@ -82,9 +82,9 @@ This project implements an **Energy-Efficient Near-Memory Systolic Accelerator w
          │   PE → PE → PE → PE      │
          │   ↓    ↓    ↓    ↓       │
          │   PE → PE → PE → PE      │
-         └───────────┬─────────────┘
+         └───────────┬──────────────┘
                      │
-         ┌───────────▼─────────────┐
+         ┌───────────▼──────────────┐
          │       Output SRAM        │
          │  (Partial Sums → Host)   │
          └──────────────────────────┘
@@ -99,7 +99,7 @@ This project implements an **Energy-Efficient Near-Memory Systolic Accelerator w
 | Vinayak Venkappa Pujeri | RTL design, FSM, Caravel integration, OpenLane physical implementation, firmware, PCBA | vinayakpujeri2047@gmail.com |
 | Santosh Mokashi | Verification (RTL + GLS), testbenches, Python golden reference, STA review, documentation | santoshmokashi3754@gmail.com |
 
-Both members: Final Year B.E. (ECE), Vidyavardhaka College of Engineering, Mysuru — VTU
+Both members: Final Year B.E. in Electronics and Communication Engineering
 
 > **Note on team size:** This is a 2-person team. The PCBA and mechanicals deliverables are scoped to a minimal carrier board schematic and simple enclosure. The silicon design, verification, and tapeout flow are fully prioritised.
 > **This project leverages our complementary expertise:** strong experience in SRAM design, memory architecture, and RTL development, combined with system-level SoC integration and embedded firmware design, enabling a complete silicon-to-system implementation.
