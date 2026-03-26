@@ -1,7 +1,7 @@
 # Energy-Efficient Near-Memory Systolic Accelerator with On-Chip Weight Compression for Edge AI
 
 > **ChipFoundry "Next Great Smart Application" Contest — Track: Edge IoT**
-> Vinayak Venkappa Pujeri & Santosh Mokashi — VVCE, Mysuru (VTU Karnataka)
+> Vinayak Venkappa Pujeri  — VVCE, Mysuru (VTU Karnataka) & Santosh Mokashi — PES university, Bengalore
 > License: Apache 2.0
 
 ---
@@ -24,6 +24,8 @@
 
 This project implements an **Energy-Efficient Near-Memory Systolic Accelerator with On-Chip Weight Compression** — a digital hardware IP integrated into the Caravel SoC user project area, targeting ultra-low-power TinyML inference for battery-operated **industrial anomaly detection sensor nodes (Edge IoT)**.
 
+**Example use-case: Detecting abnormal vibration patterns in industrial motors using TinyML inference at the edge, enabling predictive maintenance and reducing downtime.**
+
 **The core problem:** Edge AI inference devices spend 60–70% of their energy moving data, not computing. This accelerator attacks the memory bottleneck directly through three co-designed innovations:
 
 1. **Near-Memory Compute** — Local OpenRAM SRAM banks placed adjacent to the systolic Processing Elements (PEs), reducing data movement energy and interconnect switching activity.
@@ -44,6 +46,7 @@ This project implements an **Energy-Efficient Near-Memory Systolic Accelerator w
 | Process node | SKY130B |
 | User area fit | Well within 10 mm² Caravel user project area |
 | Top-level | `user_project_wrapper` (Caravel standard) |
+
 
 **Architecture:**
 
@@ -94,11 +97,12 @@ This project implements an **Energy-Efficient Near-Memory Systolic Accelerator w
 | Name | Role | Contact |
 |------|------|---------|
 | Vinayak Venkappa Pujeri | RTL design, FSM, Caravel integration, OpenLane physical implementation, firmware, PCBA | vinayakpujeri2047@gmail.com |
-| Santosh Mokashi | Verification (RTL + GLS), testbenches, Python golden reference, STA review, documentation | *(add email)* |
+| Santosh Mokashi | Verification (RTL + GLS), testbenches, Python golden reference, STA review, documentation | santoshmokashi3754@gmail.com |
 
 Both members: Final Year B.E. (ECE), Vidyavardhaka College of Engineering, Mysuru — VTU
 
 > **Note on team size:** This is a 2-person team. The PCBA and mechanicals deliverables are scoped to a minimal carrier board schematic and simple enclosure. The silicon design, verification, and tapeout flow are fully prioritised.
+> **This project leverages our complementary expertise:** strong experience in SRAM design, memory architecture, and RTL development, combined with system-level SoC integration and embedded firmware design, enabling a complete silicon-to-system implementation.
 
 ---
 
