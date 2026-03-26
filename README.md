@@ -327,13 +327,99 @@ All checks must pass (zero errors) before shuttle submission.
 - [ ] 3-minute demo video link added to this README
 - [ ] Documentation (this README) updated with all project-specific details
 
+---
 
-## Healthcare & Wearables
+## Real World Applications
 
-| Application | How Your Chip Fits |
-|---|---|
-| **ECG arrhythmia detection** | 1D CNN on heart signal → beat classification |
-| **SpO2 / PPG analysis** | Lightweight MobileNet on waveform features |
-| **Fall detection** | Accelerometer + gyro → gesture classification |
-| **Hearing aids** | Real-time audio noise suppression at <5mW |
-| **Smart patch monitoring** | Continuous vitals inference on coin cell battery |
+### Primary Application — Medical Edge AI: Cardiac Arrhythmia Detection
+
+#### Problem
+Cardiovascular disease is the leading cause of death globally.
+Traditional Holter monitors are bulky, expensive, and require
+cloud processing — creating latency and privacy risks for
+patients in remote or low-resource settings.
+
+#### How Our Chip Solves It
+```
+[ECG Patch Sensor]
+    → ADC (250Hz sampling)
+    → YOUR NMC SYSTOLIC CHIP
+        ├── INT4 compressed MobileNet weights
+        ├── Weight-stationary 4×4 systolic array
+        ├── Near-memory SRAM (no off-chip DRAM)
+        └── Inference: Normal / AFib / VTach / PVC
+    → BLE alert to caregiver / smartphone
+```
+
+#### Why Our Architecture Fits
+| Requirement | Medical Need | Our Chip |
+|---|---|---|
+| Power | Coin cell (months) | <50mW |
+| Latency | Real-time (<100ms) | ~10ms inference |
+| Privacy | No cloud needed | Full on-chip |
+| Size | Wearable patch | SKY130 10mm² |
+| Cost | Mass deployable | Open silicon |
+
+#### Target Deployment
+- Wearable cardiac patch (Holter replacement)
+- Post-surgery continuous monitoring
+- Rural/remote patient monitoring
+- Neonatal ICU (ultra-low power critical)
+
+---
+
+### Secondary Application — Industrial Predictive Maintenance
+
+#### Problem
+Unplanned motor failures cost manufacturing industries
+$50B annually. Traditional vibration monitoring requires
+expensive edge computers with active cooling.
+
+#### How Our Chip Solves It
+```
+[MEMS Vibration Sensor on Motor]
+    → FFT feature extraction
+    → YOUR NMC SYSTOLIC CHIP
+        └── Classify: Normal / Bearing fault /
+                      Imbalance / Misalignment
+    → Maintenance alert to operator dashboard
+```
+
+#### Why Our Architecture Fits
+| Requirement | Industrial Need | Our Chip |
+|---|---|---|
+| Environment | Harsh, no cooling | Passive, <50mW |
+| Deployment | 100s of sensors | Low cost silicon |
+| Connectivity | Often offline | Fully autonomous |
+| Lifetime | 5–10 years | Battery operated |
+
+---
+
+### Other Validated Application Domains
+
+| Domain | Specific Use Case | Key Benefit |
+|---|---|---|
+| **Smart Agriculture** | Soil + pest sensor fusion | Solar powered, no internet |
+| **Structural Health** | Bridge vibration anomaly | Years on battery |
+| **Wearable Fitness** | Fall detection, gesture | Always-on <1mW |
+| **Keyword Spotting** | Wake word detection | No cloud dependency |
+| **EV Battery** | Cell health classification | Safety critical inference |
+
+---
+
+### Common Thread — Why One Chip Fits All
+
+All these applications share the same computational pattern:
+```
+Time-series sensor data
+    → Small CNN / MobileNet / TinyML model
+    → Binary or multi-class output
+    → Battery powered, no cloud
+    → Real-time response required
+```
+
+Our NMC Systolic Accelerator with INT4 weight compression
+is purpose-built for exactly this pattern — making it a
+horizontal platform IP, not just a point solution.
+
+---
